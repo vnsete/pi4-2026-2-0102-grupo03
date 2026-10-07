@@ -1,0 +1,15 @@
+# ADR 0001: Utilizar HTML, CSS e JavaScript no frontend
+
+**Status:** proposto
+
+**Contexto:** O ServiHUB será uma aplicação web voltada à organização das atividades de pequenos prestadores de serviços. O sistema deverá disponibilizar funcionalidades de cadastro de clientes, registro de serviços, agendamentos e criação de orçamentos por meio de uma interface simples. A equipe precisa considerar o prazo de desenvolvimento e a facilidade de manutenção do projeto.
+
+**Decisão:** Utilizar HTML, CSS e JavaScript para desenvolver a interface web do ServiHUB, sem a adoção inicial de frameworks de frontend.
+
+**Alternativas consideradas:**
+- React: oferece recursos para construção de interfaces dinâmicas, mas adicionaria dependências e maior complexidade à configuração inicial do projeto.
+- Angular: disponibiliza uma estrutura completa para aplicações web, porém exige maior familiarização com o framework e suas ferramentas.
+
+**Consequências:**
+- Positivas: menor complexidade de configuração, utilização de tecnologias nativas da web e maior controle sobre a estrutura e o comportamento da interface.
+- Negativas: necessidade de organizar manualmente o código e gerenciar as atualizações da interface, podendo aumentar a dificuldade de manutenção conforme o sistema crescer.
