@@ -1,0 +1,15 @@
+# ADR 0002: Utilizar Java no backend
+
+**Status:** proposto
+
+**Contexto:** O ServiHUB precisará processar e armazenar informações relacionadas a clientes, serviços, agendamentos, orçamentos e pagamentos. O backend será responsável pela implementação das regras de negócio e pela comunicação com o banco de dados. A tecnologia escolhida deverá permitir a organização das funcionalidades e considerar o tempo disponível para o desenvolvimento.
+
+**Decisão:** Utilizar Java como linguagem principal para o desenvolvimento do backend do ServiHUB, responsável pelo processamento das regras de negócio e pelo gerenciamento das informações do sistema.
+
+**Alternativas consideradas:**
+- JavaScript com Node.js: permitiria utilizar a mesma linguagem do frontend, mas exigiria a adoção de um ambiente de execução diferente para o backend.
+- Python: oferece uma sintaxe simples e possibilidades de desenvolvimento web, mas exigiria a escolha e familiarização com ferramentas e frameworks específicos.
+
+**Consequências:**
+- Positivas: utilização de tipagem estática, suporte à programação orientada a objetos e possibilidade de organizar o código para facilitar a manutenção e a expansão do sistema.
+- Negativas: necessidade de configuração do ambiente Java, maior quantidade de código em determinadas funcionalidades e possível aumento do tempo de desenvolvimento.
