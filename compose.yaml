@@ -1,0 +1,91 @@
+services:
+  banco:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Defina MYSQL_ROOT_PASSWORD no .env}
+      MYSQL_DATABASE: servihub
+      MYSQL_USER: servihub
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./banco-de-dados/001-schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+      - ./banco-de-dados/002-contas-e-exemplos.sql:/docker-entrypoint-initdb.d/002-contas-e-exemplos.sql:ro
+      - ./banco-de-dados/003-orcamentos-catalogo.sql:/docker-entrypoint-initdb.d/003-orcamentos-catalogo.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 25s
+
+  back1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: backend-1
+    restart: unless-stopped
+    depends_on:
+      banco:
+        condition: service_healthy
+    environment:
+      BIND_HOST: 0.0.0.0
+      PORT: 8081
+      DB_URL: jdbc:mysql://banco:3306/servihub?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
+      DB_USER: servihub
+      DB_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?Defina INTERNAL_API_KEY no .env}
+      APP_EMAIL: ${APP_EMAIL:?Defina APP_EMAIL no .env}
+      APP_PASSWORD: ${APP_PASSWORD:?Defina APP_PASSWORD no .env}
+      PUBLIC_ORIGIN: http://localhost:8080
+    command: ["java", "-cp", "/app/classes:/app/lib/*", "br.servihub.Backend1"]
+
+  back2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: backend-2
+    restart: unless-stopped
+    depends_on:
+      banco:
+        condition: service_healthy
+      back1:
+        condition: service_started
+    environment:
+      BIND_HOST: 0.0.0.0
+      PORT: 8082
+      DB_URL: jdbc:mysql://banco:3306/servihub?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
+      DB_USER: servihub
+      DB_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?Defina INTERNAL_API_KEY no .env}
+      BACKEND1_URL: http://back1:8081
+      PUBLIC_ORIGIN: http://localhost:8080
+    command: ["java", "-cp", "/app/classes:/app/lib/*", "br.servihub.Backend2"]
+
+  front:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: frontend
+    restart: unless-stopped
+    depends_on:
+      - back1
+      - back2
+    environment:
+      BIND_HOST: 0.0.0.0
+      PORT: 8080
+      PUBLIC_DIR: /app/public
+      BACKEND1_URL: http://back1:8081
+      BACKEND2_URL: http://back2:8082
+      PUBLIC_ORIGIN: http://localhost:8080
+    volumes:
+      - ./frontend/public:/app/public:ro
+    ports:
+      - "127.0.0.1:8080:8080"
+    command: ["java", "-cp", "/app/classes:/app/lib/*", "br.servihub.Frontend"]
+
+volumes:
+  mysql_data:

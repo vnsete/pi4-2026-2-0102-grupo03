@@ -1,0 +1,10 @@
+.env
+**/target/
+.vscode/
+.idea/
+*.log
+
+# Modulos clonados localmente para integracao
+/backend-1/
+/backend-2/
+/frontend/
