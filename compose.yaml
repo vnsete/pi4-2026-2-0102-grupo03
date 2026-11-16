@@ -1,91 +1,54 @@
+yaml
 services:
-  banco:
-    image: mysql:8.4
-    restart: unless-stopped
+  mysql:
+    image: mysql:9.2
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Defina MYSQL_ROOT_PASSWORD no .env}
-      MYSQL_DATABASE: servihub
+      MYSQL_DATABASE: servihub_pdf
       MYSQL_USER: servihub
       MYSQL_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./banco-de-dados/001-schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
-      - ./banco-de-dados/002-contas-e-exemplos.sql:/docker-entrypoint-initdb.d/002-contas-e-exemplos.sql:ro
-      - ./banco-de-dados/003-orcamentos-catalogo.sql:/docker-entrypoint-initdb.d/003-orcamentos-catalogo.sql:ro
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
       interval: 5s
       timeout: 5s
       retries: 30
-      start_period: 25s
 
-  back1:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        MODULE: backend-1
-    restart: unless-stopped
-    depends_on:
-      banco:
-        condition: service_healthy
+  backend-1:
+    build: ./backend-1
     environment:
-      BIND_HOST: 0.0.0.0
-      PORT: 8081
-      DB_URL: jdbc:mysql://banco:3306/servihub?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
+      DB_URL: jdbc:mysql://mysql:3306/servihub_pdf
       DB_USER: servihub
       DB_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:?Defina INTERNAL_API_KEY no .env}
-      APP_EMAIL: ${APP_EMAIL:?Defina APP_EMAIL no .env}
-      APP_PASSWORD: ${APP_PASSWORD:?Defina APP_PASSWORD no .env}
-      PUBLIC_ORIGIN: http://localhost:8080
-    command: ["java", "-cp", "/app/classes:/app/lib/*", "br.servihub.Backend1"]
-
-  back2:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        MODULE: backend-2
-    restart: unless-stopped
-    depends_on:
-      banco:
-        condition: service_healthy
-      back1:
-        condition: service_started
-    environment:
-      BIND_HOST: 0.0.0.0
-      PORT: 8082
-      DB_URL: jdbc:mysql://banco:3306/servihub?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
-      DB_USER: servihub
-      DB_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
-      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?Defina INTERNAL_API_KEY no .env}
-      BACKEND1_URL: http://back1:8081
-      PUBLIC_ORIGIN: http://localhost:8080
-    command: ["java", "-cp", "/app/classes:/app/lib/*", "br.servihub.Backend2"]
-
-  front:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        MODULE: frontend
-    restart: unless-stopped
-    depends_on:
-      - back1
-      - back2
-    environment:
-      BIND_HOST: 0.0.0.0
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Defina ADMIN_EMAIL no .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Defina ADMIN_PASSWORD no .env}
       PORT: 8080
-      PUBLIC_DIR: /app/public
-      BACKEND1_URL: http://back1:8081
-      BACKEND2_URL: http://back2:8082
-      PUBLIC_ORIGIN: http://localhost:8080
-    volumes:
-      - ./frontend/public:/app/public:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  backend-2:
+    build: ./backend-2
+    environment:
+      BACKEND1_URL: http://backend-1:8080
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?Defina INTERNAL_API_KEY no .env}
+      PORT: 8081
+    depends_on:
+      - backend-1
+
+  frontend:
+    image: nginx:alpine
     ports:
-      - "127.0.0.1:8080:8080"
-    command: ["java", "-cp", "/app/classes:/app/lib/*", "br.servihub.Frontend"]
+      - "127.0.0.1:3000:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend-1
+      - backend-2
 
 volumes:
   mysql_data:
