@@ -1,0 +1,65 @@
+CREATE TABLE IF NOT EXISTS conta (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  senha_hash VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS cliente (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  nome VARCHAR(160) NOT NULL,
+  telefone VARCHAR(40) NOT NULL,
+  email VARCHAR(255),
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS endereco (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  cliente_id BIGINT NOT NULL,
+  logradouro VARCHAR(200) NOT NULL,
+  numero VARCHAR(30),
+  complemento VARCHAR(120),
+  bairro VARCHAR(120),
+  cidade VARCHAR(120),
+  estado VARCHAR(2),
+  cep VARCHAR(12),
+  FOREIGN KEY (cliente_id) REFERENCES cliente (id)
+);
+
+CREATE TABLE IF NOT EXISTS servico (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  cliente_id BIGINT NOT NULL,
+  endereco_id BIGINT NULL,
+  descricao TEXT NOT NULL,
+  valor_previsto DECIMAL(12, 2),
+  status VARCHAR(30) NOT NULL DEFAULT 'registrado',
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (cliente_id) REFERENCES cliente (id),
+  FOREIGN KEY (endereco_id) REFERENCES endereco (id)
+);
+
+CREATE TABLE IF NOT EXISTS agendamento (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  servico_id BIGINT NOT NULL,
+  inicio DATETIME NOT NULL,
+  fim DATETIME NOT NULL,
+  FOREIGN KEY (servico_id) REFERENCES servico (id)
+);
+
+CREATE TABLE IF NOT EXISTS orcamento (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  cliente_id BIGINT NOT NULL,
+  servico_id BIGINT NULL,
+  descricao TEXT NOT NULL,
+  valor DECIMAL(12, 2) NOT NULL,
+  FOREIGN KEY (cliente_id) REFERENCES cliente (id),
+  FOREIGN KEY (servico_id) REFERENCES servico (id)
+);
+
+CREATE TABLE IF NOT EXISTS pagamento (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  servico_id BIGINT NOT NULL UNIQUE,
+  valor DECIMAL(12, 2) NOT NULL,
+  situacao VARCHAR(20) NOT NULL,
+  data_pagamento DATE NULL,
+  FOREIGN KEY (servico_id) REFERENCES servico (id)
+);
