@@ -43,7 +43,7 @@ services:
     ports:
       - "127.0.0.1:3000:80"
     volumes:
-      - ./frontend:/usr/share/nginx/html:ro
+      - ./frontend/public:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - backend-1
