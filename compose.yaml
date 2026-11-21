@@ -1,4 +1,3 @@
-yaml
 services:
   mysql:
     image: mysql:9.2
